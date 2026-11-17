@@ -22,25 +22,26 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	s := &state{
-		config : &conf,
-	}
-
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("error connecting to db: %v", err)
 	}
-	s.db = database.New(db)
+
+	s := &state{
+		config : &conf,
+		db : database.New(db),
+	}
 
 	commands := commands{
 		functions : map[string]func(*state, command) error{},
 	}
 	commands.register("login", handlerLogin)
 	commands.register("register", handlerRegister)
+	commands.register("reset", handlerReset)
+	commands.register("users", handlerUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("Not enough arguments!")
-		os.Exit(1)
 	}
 	cmd := command{
 		name : os.Args[1],

@@ -22,12 +22,12 @@ func handlerLogin(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Username set to '%s' successfully\n", cmd.args[0])
+	fmt.Printf("User set to '%s' successfully\n", cmd.args[0])
 	return nil
 }
 
 
-func handlerRegister(s* state, cmd command) error {
+func handlerRegister(s *state, cmd command) error {
 	if len(cmd.args) == 0 {
 		return errors.New("Not enough arguments. Required: 'username'\n")
 	}
@@ -49,5 +49,31 @@ func handlerRegister(s* state, cmd command) error {
 		return errors.New("couldn't set current user")
 	}
 	fmt.Printf("%s\n", user.Name)
+	return nil
+}
+
+
+func handlerReset(s *state, cmd command) error {
+	err := s.db.DeleteUsers(context.Background())
+	if err != nil {
+		fmt.Print("1\n")
+		return err
+	}
+	fmt.Print("0\n")
+	return nil
+}
+
+func handlerUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	for _, u := range users {
+		if u.Name == s.config.CurrentUserName {
+			fmt.Printf("* %s (current)\n", u.Name)
+		} else {
+			fmt.Printf("* %s\n", u.Name)
+		}
+	}
 	return nil
 }
