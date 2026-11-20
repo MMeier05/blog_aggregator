@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -85,6 +86,56 @@ DELETE FROM users
 func (q *Queries) DeleteUsers(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteUsers)
 	return err
+}
+
+const getFeeds = `-- name: GetFeeds :many
+SELECT 
+  feeds.name AS feed_name,
+  users.name AS user_name,
+  feeds.id AS feed_id,
+  users.id AS user_id,
+  feeds.url
+FROM
+  feeds
+LEFT JOIN 
+  users ON feeds.user_id = users.id
+`
+
+type GetFeedsRow struct {
+	FeedName string
+	UserName sql.NullString
+	FeedID   uuid.UUID
+	UserID   uuid.NullUUID
+	Url      string
+}
+
+func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeeds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedsRow
+	for rows.Next() {
+		var i GetFeedsRow
+		if err := rows.Scan(
+			&i.FeedName,
+			&i.UserName,
+			&i.FeedID,
+			&i.UserID,
+			&i.Url,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUser = `-- name: GetUser :one
